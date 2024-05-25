@@ -1,0 +1,3 @@
+[submodule "src/robot/robots/mulinex_description"]
+	path = src/robot/robots/mulinex_description
+	url = git@github.com:ddebenedittis/mulinex_description.git

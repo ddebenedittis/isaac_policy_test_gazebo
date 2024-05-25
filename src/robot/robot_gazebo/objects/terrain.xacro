@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="ground_plane" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:arg name="terrain" default="rigid"/>
+    <xacro:property name="terrain" default="$(arg terrain)"/>
+
+    <xacro:property name="side" default="100"/>
+
+    <xacro:property name="roll"  default="0"/>
+    <xacro:property name="pitch" default="0"/>
+    <xacro:property name="yaw"   default="0"/>
+
+    <xacro:property name="x" default="0"/>
+    <xacro:property name="y" default="0"/>
+    <xacro:property name="z" default="-1"/>
+
+    <gazebo>
+        <static>true</static>
+    </gazebo>
+
+    <link name="ground_plane_link">
+        <visual>
+            <origin rpy="${roll} ${pitch} ${yaw}" xyz="${x} ${y} ${z}"/>
+            <geometry>
+                <box size="${side} ${side} 2"/>
+            </geometry>
+
+            <xacro:if value="${'rigid' == terrain}">
+                <material name="grey">
+                    <color rgba="0.8 0.8 0.8 1.0"/>
+                </material>
+            </xacro:if>
+
+            <xacro:if value="${'soft' == terrain}">
+                <material name="green">
+                    <color rgba="0.0 0.8 0.0 1.0"/>
+                </material>
+            </xacro:if>
+
+            <xacro:if value="${'very_soft' == terrain}">
+                <material name="gold">
+                    <color rgba="0.8 0.8 0.0 1.0"/>
+                </material>
+            </xacro:if>
+            
+        </visual>
+        <collision>
+            <origin rpy="${roll} ${pitch} ${yaw}" xyz="${x} ${y} ${z}"/>
+            <geometry>
+                <box size="${side} ${side} 2"/>
+            </geometry>
+        </collision>
+    </link>
+    <joint name="ground_plane_link_to_ground_plane_link_inertia" type="fixed">
+        <parent link="ground_plane_link"/>
+        <child link="ground_plane_link_inertia"/>
+    </joint>
+    <link name="ground_plane_link_inertia">
+        <inertial>
+            <origin rpy="0 0 0" xyz="0 0 0"/>
+            <mass value="1"/>
+            <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+        </inertial>
+    </link>
+
+    <xacro:if value="${'rigid' == terrain}">
+        <gazebo reference="ground_plane_link">
+            <material>Gazebo/Grey</material>
+            <kp>1e6</kp>
+            <kd>1e2</kd>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:if value="${'soft' == terrain}">
+        <gazebo reference="ground_plane_link">
+            <material>Gazebo/Grass</material>
+            <kp>5000</kp>
+            <kd>100</kd>
+        </gazebo>
+    </xacro:if>
+
+    <xacro:if value="${'very_soft' == terrain}">
+        <gazebo reference="ground_plane_link">
+            <material>Gazebo/Gold</material>
+            <kp>2000</kp>
+            <kd>100</kd>
+        </gazebo>
+    </xacro:if>
+</robot>

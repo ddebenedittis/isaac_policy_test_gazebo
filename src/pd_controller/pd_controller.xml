@@ -1,0 +1,9 @@
+<library path="pd_controller">
+    <class name="pd_controller/PDController"
+           type="pd_controller::PDController"
+           base_class_type="controller_interface::ControllerInterface">
+        <description>
+            Jo mama
+        </description>
+    </class>
+</library>
