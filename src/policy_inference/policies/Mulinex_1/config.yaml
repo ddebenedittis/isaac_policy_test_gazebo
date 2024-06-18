@@ -80,6 +80,13 @@ task:
       RF_KFE: -5.0
       RH_KFE: 5.0
     learn:
+      h_init: 0.35
+      h_min_base: 0.25
+      h_min_hip: 0.1
+      h_min_knee: 0.05
+      h_step: 0.05
+      n_hist: 1
+      n_action_hist: 1
       linearVelocityXYRewardScale: 1.0
       angularVelocityZRewardScale: 0.5
       linearVelocityZRewardScale: -0.03

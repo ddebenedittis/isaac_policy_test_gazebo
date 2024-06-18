@@ -121,12 +121,19 @@ class PolicyInferenceNode(Node):
         
         self.model = None
         
-        config_path = os.path.join(self.package_share_directory, 'policies', 'Mulinex_1', 'config.yaml')
+        config_path = os.path.join(self.package_share_directory, 'policies', 'Mulinex_2', 'config.yaml')
         with open(config_path, 'r') as f:
             params = yaml.safe_load(f)
             
         # self.rate = 1.0 / (params['task']['sim']['dt'])
         self.rate = 60.
+        
+        self.n_hist = params['task']['env']['learn']['n_hist']
+        self.n_action_hist = params['task']['env']['learn']['n_action_hist']
+        
+        self.dof_pos_scaled_hist = [self.q_j for _ in range(self.n_hist)]
+        self.dof_vel_scaled_hist = [self.v_j for _ in range(self.n_hist)]
+        self.actions_hist = [self.actions for _ in range(self.n_action_hist)]
         
         default_joint_angles = params['task']['env']['defaultJointAngles']
         self.default_joint_angles = np.array([
@@ -197,10 +204,16 @@ class PolicyInferenceNode(Node):
         self.vel_cmd = np.array([msg.velocity_forward, msg.yaw_rate])
     
     def load_policy(self):
-        policy_path = os.path.join(self.package_share_directory, 'policies', 'Mulinex_1',  'Mulinexexport.onnx')
+        policy_path = os.path.join(self.package_share_directory, 'policies', 'Mulinex_2',  'Mulinexexport.onnx')
         self.model = onnxruntime.InferenceSession(policy_path)
 
     def perform_inference(self):
+        self.dof_pos_scaled_hist.pop(0)
+        self.dof_pos_scaled_hist.append((self.q_j - self.default_joint_angles) * self.dofPositionScale)
+        
+        self.dof_vel_scaled_hist.pop(0)
+        self.dof_vel_scaled_hist.append(self.v_j * self.dofVelocityScale)
+        
         orientation = quaternion.from_float_array(self.q_b[3:7])
         
         observations = np.concatenate((
@@ -209,13 +222,16 @@ class PolicyInferenceNode(Node):
             # - self.a_b / np.linalg.norm(self.a_b),
             quat_rot(orientation, np.array([0.,0.,-1.])),
             self.vel_cmd * np.array([self.linearVelocityScale, self.angularVelocityScale]),
-            (self.q_j - self.default_joint_angles) * self.dofPositionScale,
-            self.v_j * self.dofVelocityScale,
-            self.actions.flatten(),
+            *self.dof_pos_scaled_hist,
+            *self.dof_vel_scaled_hist,
+            *self.actions_hist,
         )).astype(np.float32).reshape(1, -1)
         
         input_name = self.model.get_inputs()[0].name
         self.actions = self.model.run(None, {input_name: observations})[0]
+        
+        self.actions_hist.pop(0)
+        self.actions_hist.append(self.actions.flatten())
         
     def timer_callback(self):
         if self.started:
